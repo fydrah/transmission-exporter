@@ -42,20 +42,8 @@ func recordMetrics() {
 	go func() {
 		for _, torrent := range torrents {
 			seedersCount.With(prometheus.Labels{"instance": url, "torrent": torrent.Name}).Set(float64(torrent.Seeders))
-		}
-	}()
-
-	go func() {
-		for _, torrent := range torrents {
 			rateUpload.With(prometheus.Labels{"instance": url, "torrent": torrent.Name}).Set(float64(torrent.RateUpload))
-		}
-	}()
-
-	go func() {
-		for {
-			for _, torrent := range torrents {
-				rateDownload.With(prometheus.Labels{"instance": url, "torrent": torrent.Name}).Set(float64(torrent.RateDownload))
-			}
+			rateDownload.With(prometheus.Labels{"instance": url, "torrent": torrent.Name}).Set(float64(torrent.RateDownload))
 		}
 	}()
 }
@@ -83,7 +71,7 @@ func main() {
 	for {
 		recordMetrics()
 		time.Sleep(20 * time.Second)
+		log.Fatal(http.ListenAndServe(":2112", nil))
+		http.Handle("/metrics", promhttp.Handler())
 	}
-	http.Handle("/metrics", promhttp.Handler())
-	log.Fatal(http.ListenAndServe(":2112", nil))
 }
